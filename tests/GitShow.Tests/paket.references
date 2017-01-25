@@ -1,4 +1,6 @@
 FSharp.Core
+YamlDotNet
+
 group Test
-NUnit
-NUnit.Runners
+	NUnit
+	NUnit.Runners
