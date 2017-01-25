@@ -1,7 +1,9 @@
 NUGET
   remote: https://www.nuget.org/api/v2
     FSharp.Core (4.0.0.1) - redirects: force
-
+GITHUB
+  remote: fsprojects/Chessie
+    src/Chessie/ErrorHandling.fs (f0237b5d23da6dbc33d8aab59c8be947f6878dfb)
 GROUP Build
 NUGET
   remote: https://www.nuget.org/api/v2
@@ -25,6 +27,8 @@ GITHUB
   remote: fsharp/FAKE
     modules/Octokit/Octokit.fsx (805ca9420e0234fe2ac8fe2033f28faeec2ebb40)
       Octokit (>= 0.20)
+  remote: fsprojects/Chessie
+    src/Chessie/ErrorHandling.fs (f0237b5d23da6dbc33d8aab59c8be947f6878dfb)
 GROUP Test
 NUGET
   remote: https://www.nuget.org/api/v2

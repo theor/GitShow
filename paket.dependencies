@@ -1,6 +1,7 @@
 source https://nuget.org/api/v2
 
 nuget FSharp.Core redirects: force
+github fsprojects/Chessie src/Chessie/ErrorHandling.fs
 
 group Build
   source https://nuget.org/api/v2
@@ -10,6 +11,7 @@ group Build
   nuget FSharp.Formatting
 
   github fsharp/FAKE modules/Octokit/Octokit.fsx
+
 
 group Test
   source https://nuget.org/api/v2
