@@ -1,0 +1,25 @@
+type project
+title
+    GitShow
+owners
+    theor
+authors 
+    theor
+projectUrl
+    https://github.com/theor/GitShow
+iconUrl
+    https://raw.githubusercontent.com/theor/GitShow/master/docs/files/img/logo.png
+licenseUrl
+    https://github.com/theor/GitShow/blob/master/LICENSE.txt
+requireLicenseAcceptance
+    false
+copyright
+    Copyright 2015
+tags
+    git slides
+summary
+    Code presentations with git
+description
+    Description not set
+
+
