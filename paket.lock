@@ -30,6 +30,14 @@ GITHUB
       Octokit (>= 0.20)
   remote: fsprojects/Chessie
     src/Chessie/ErrorHandling.fs (f0237b5d23da6dbc33d8aab59c8be947f6878dfb)
+GROUP Cli
+NUGET
+  remote: https://www.nuget.org/api/v2
+    Argu (3.7)
+      FSharp.Core (>= 4.0.1.7-alpha) - framework: >= net463, >= netstandard16
+      NETStandard.Library (>= 1.6) - framework: >= net463, >= netstandard16
+      System.Xml.XDocument (>= 4.0.11) - framework: >= net463, >= netstandard16
+
 GROUP Test
 NUGET
   remote: https://www.nuget.org/api/v2

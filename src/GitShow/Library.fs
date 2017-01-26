@@ -12,15 +12,15 @@ open YamlDotNet.Serialization
 module Slide = 
   open Process
   
-
+  [<StructuralEquality;StructuralComparison>]
   type T = {
     commit: string;
     command: string option
   }
   let from (id:string) : T = { commit=id; command=None }
-  type Error = Unknown | ModifiedFiles | Serialization of exn
+  type Error = Unknown | ModifiedFiles | Serialization of exn | Warn of string
   type IImpl =
-    abstract member SetSlide: T -> Result<string, Error>
+    abstract member SetSlide: T -> Result<unit, Error>
     abstract member GetCurrent: Unit -> Result<T, Error>
 
   type GitImpl() =
@@ -30,7 +30,7 @@ module Slide =
           runf ["checkout"; "-q"; s.commit]
           match s.command with
           | _ -> ()
-          ok s.commit
+          ok ()
         override x.GetCurrent() = fail Unknown
         
 
@@ -51,8 +51,34 @@ module Slide =
     |> mapFailure (List.map Serialization)
     
 
-  /// Returns 42
-  ///
-  /// ## Parameters
-  ///  - `num` - whatever
-  let hello num = 42
+module Runner =
+  open Slide
+
+  type T = { presentation: Slide.Presentation; impl:IImpl }
+  let fromPresentation p = { presentation=p; impl=GitImpl() }
+
+  let private findIndex (t:T) =
+    trial {
+      let! cur = t.impl.GetCurrent()
+      let i = Array.findIndex((=) cur) t.presentation
+      return i
+    }
+
+  let start (t:T) = t.impl.SetSlide (t.presentation.[0])
+  let last (t:T) = t.impl.SetSlide (Array.last t.presentation)
+  let next (t:T) =
+    trial {
+        let! i = findIndex t
+        let res = if i + 1 < Array.length t.presentation
+                  then t.impl.SetSlide (t.presentation.[i + 1])
+                  else warn (Warn "no next slide") ()
+        return! res
+    }
+  let prev (t:T) =
+    trial {
+        let! i = findIndex t
+        let res = if i > 0
+                  then t.impl.SetSlide (t.presentation.[i - 1])
+                  else warn (Warn "no next slide") ()
+        return! res
+    }
