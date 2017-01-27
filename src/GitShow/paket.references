@@ -1,4 +1,5 @@
 FSharp.Core
 Newtonsoft.Json
+Hopac
 Logary
 File:ErrorHandling.fs . 

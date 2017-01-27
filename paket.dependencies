@@ -2,6 +2,7 @@ source https://nuget.org/api/v2
 
 nuget FSharp.Core redirects: force
 nuget Newtonsoft.Json
+nuget Hopac
 nuget Logary
 github fsprojects/Chessie src/Chessie/ErrorHandling.fs
 

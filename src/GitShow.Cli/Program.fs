@@ -2,6 +2,7 @@
 // See the 'F# Tutorial' project for more help.
 
 open Argu
+open Logary
 open GitShow.Slide
 open GitShow.Runner
 open GitShow
@@ -18,6 +19,8 @@ with
             match s with
             | _ -> "??"
 
+let logger = Logging.getCurrentLogger ()
+
 let execCommand (p:T) c =
     match c with
     | Next -> next p
@@ -27,7 +30,7 @@ let execCommand (p:T) c =
     | Cur ->
         trial {
             let! cur = p.impl.GetCurrent p.presentation
-            do printfn "Current: %A" cur
+            Message.eventInfof "Current: %A" cur |> Logger.logSimple logger
             return ()
         }
     | _ -> fail Unknown
@@ -37,27 +40,28 @@ let runInteractive (r:Runner.T) =
     while not stop do
         printf "> "
         let s = System.Console.ReadLine()
-        if s.Chars 0 = '!'
-        then
-            let pi = Process.runProcess(printfn "%s")(eprintfn "%s") "cmd" ["/c";s.Substring 1]
-            ()
-        else
-            let res = match s.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries) with
-                    | [|"n"|] | [|"next"|] -> execCommand r Next
-                    | [|"p"|] | [|"prev"|] -> execCommand r Prev
-                    | [|"s"|] | [|"start"|] -> execCommand r Start
-                    | [|"e"|] | [|"end"|] -> execCommand r End
-                    | [|"c"|] | [|"current"|] -> execCommand r Cur
-                    | [|"l"|] | [|"list"|] -> printfn "%A" r; ok ()
-                    | [| "exit" |] -> stop <- true; ok ()
-                    | x -> eprintfn "Unknown command: %A" x; ok ()
+        let res =
+            if s.Chars 0 = '!'
+            then
+                let pi = Process.runProcess(printfn "%s")(eprintfn "%s") "cmd" ["/c";s.Substring 1]
+                if pi = 0 then ok() else fail (Error.Shell "error during cmd")
+            else
+                match s.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries) with
+                | [|"n"|] | [|"next"|] -> execCommand r Next
+                | [|"p"|] | [|"prev"|] -> execCommand r Prev
+                | [|"s"|] | [|"start"|] -> execCommand r Start
+                | [|"e"|] | [|"end"|] -> execCommand r End
+                | [|"c"|] | [|"current"|] -> execCommand r Cur
+                | [|"l"|] | [|"list"|] -> printfn "%A" r; ok ()
+                | [| "exit" |] -> stop <- true; ok ()
+                | x -> eprintfn "Unknown command: %A" x; ok ()
                 
-            match res with
-            | Fail f ->
-                eprintfn "%A" f
-            | Pass i -> ()
-            | Warn(i,f) ->
-                eprintfn "%A" f
+        match res with
+        | Fail f ->
+            eprintfn "%A" f
+        | Pass i -> ()
+        | Warn(i,f) ->
+            eprintfn "%A" f
     0
 
 [<EntryPoint>]
@@ -73,7 +77,7 @@ let main argv =
     let res = trial {
         let! p= Presentation.load(presFile)
         do printfn "%A" p
-        let runner = Runner.fromPresentation p
+        let runner = Runner.fromPresentation p (Git.GitImpl())
         match args.TryGetResult <@ Command @> with
         | None ->
             printfn "Interactive mode"

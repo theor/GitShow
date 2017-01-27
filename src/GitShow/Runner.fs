@@ -4,11 +4,10 @@ module Runner =
 
     open Slide
     open Presentation
-    open Git
     open Chessie.ErrorHandling
 
     type T = { presentation: Presentation.Presentation; impl:IImpl }
-    let fromPresentation p = { presentation=p; impl=GitImpl() }
+    let fromPresentation p impl = { presentation=p; impl=impl }
 
     let private findIndex (t:T) =
         trial {

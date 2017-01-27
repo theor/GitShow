@@ -13,7 +13,13 @@ module Slide =
     command: string option
   }
   let from (id:string) : T = { commit=id; command=None }
-  type Error = Unknown | GitError | ModifiedFiles | Serialization of exn | Warn of string
+  type Error =
+    | Unknown
+    | GitError
+    | ModifiedFiles
+    | Serialization of exn
+    | Warn of string
+    | Shell of string
   
 
 module Presentation =
@@ -32,27 +38,3 @@ module Presentation =
     let save (path:string) (p:Presentation): Result<unit, Error> =
         Chessie.ErrorHandling.Trial.Catch (JsonConvert.SerializeObject >> (fun x -> System.IO.File.WriteAllText(path,x))) p
         |> mapFailure (List.map Serialization)
-
-module Git =
-    open Slide
-    open Presentation
-    type GitImpl() =
-        let run = ignore << Process.runProcess ignore ignore "git"
-    
-        let runf args =
-            let mutable r = []
-            let _ = Process.runProcess (fun x -> r <- x :: r) (printfn "ERROR: %s") "git" args
-            Seq.toArray r
-
-        interface IImpl with
-            override x.SetSlide(s:T) =
-                run ["checkout"; "-q"; s.commit]
-                match s.command with
-                | _ -> ()
-                ok ()
-            override x.GetCurrent(p:Presentation) =
-                trial {
-                    let! curId = runf ["rev-parse"; "HEAD"] |> Array.tryItem 0 |> failIfNone GitError
-                    let! i = p |> Array.tryFindIndex (fun s -> s.commit = curId) |> failIfNone Unknown
-                    return (p.[i],i)
-                }

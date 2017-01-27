@@ -1,3 +1,5 @@
 ﻿FSharp.Core
+Hopac
+Logary
 group Cli
   Argu
