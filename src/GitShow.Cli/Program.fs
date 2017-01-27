@@ -7,7 +7,7 @@ open GitShow.Runner
 open GitShow
 open Chessie.ErrorHandling
 
-type Command = Next | Prev | Start | End | Shell
+type Command = Next | Prev | Start | End | Shell | Cur
 type Args =
 //    | Start
     | Presentation of path:string
@@ -24,7 +24,41 @@ let execCommand (p:T) c =
     | Prev -> prev p
     | Start -> start p
     | End -> last p
+    | Cur ->
+        trial {
+            let! cur = p.impl.GetCurrent p.presentation
+            do printfn "Current: %A" cur
+            return ()
+        }
     | _ -> fail Unknown
+
+let runInteractive (r:Runner.T) =
+    let mutable stop = false
+    while not stop do
+        printf "> "
+        let s = System.Console.ReadLine()
+        if s.Chars 0 = '!'
+        then
+            let pi = Process.runProcess(printfn "%s")(eprintfn "%s") "cmd" ["/c";s.Substring 1]
+            ()
+        else
+            let res = match s.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries) with
+                    | [|"n"|] | [|"next"|] -> execCommand r Next
+                    | [|"p"|] | [|"prev"|] -> execCommand r Prev
+                    | [|"s"|] | [|"start"|] -> execCommand r Start
+                    | [|"e"|] | [|"end"|] -> execCommand r End
+                    | [|"c"|] | [|"current"|] -> execCommand r Cur
+                    | [|"l"|] | [|"list"|] -> printfn "%A" r; ok ()
+                    | [| "exit" |] -> stop <- true; ok ()
+                    | x -> eprintfn "Unknown command: %A" x; ok ()
+                
+            match res with
+            | Fail f ->
+                eprintfn "%A" f
+            | Pass i -> ()
+            | Warn(i,f) ->
+                eprintfn "%A" f
+    0
 
 [<EntryPoint>]
 let main argv = 
@@ -35,7 +69,7 @@ let main argv =
     match args.TryGetResult <@ Command @> with
     | None -> printfn "Interactive mode"
     | Some(c) -> printfn "Command mode: %A" c
-    let presFile = args.GetResult(<@ Presentation @>, "pres.yml")
+    let presFile = args.GetResult(<@ Presentation @>, "pres.json")
     let res = trial {
         let! p= load(presFile)
         do printfn "%A" p
@@ -43,7 +77,7 @@ let main argv =
         match args.TryGetResult <@ Command @> with
         | None ->
             printfn "Interactive mode"
-            return 0
+            return runInteractive runner
         | Some(c) ->
             printfn "Command mode: %A" c
             do! execCommand runner c

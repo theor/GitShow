@@ -1,7 +1,7 @@
 source https://nuget.org/api/v2
 
 nuget FSharp.Core redirects: force
-nuget YamlDotNet
+nuget Newtonsoft.Json
 github fsprojects/Chessie src/Chessie/ErrorHandling.fs
 
 group Build

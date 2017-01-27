@@ -43,7 +43,7 @@ let testRepo () =
     printfn "Commits: %A" commits
     let pres = commits |> Array.map Slide.from
     printfn "Pres: %A" pres
-    Slide.save "pres.yml" pres |> assertSuccess
+    Slide.save "pres.json" pres |> assertSuccess
     pres
 
 [<Test>]

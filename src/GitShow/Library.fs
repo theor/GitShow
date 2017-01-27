@@ -1,7 +1,7 @@
 namespace GitShow
 
 open Chessie.ErrorHandling
-open YamlDotNet.Serialization
+open Newtonsoft.Json
 /// Documentation for my library
 ///
 /// ## Example
@@ -11,6 +11,7 @@ open YamlDotNet.Serialization
 ///
 module Slide = 
   open Process
+  open System.Collections.Generic
   
   [<StructuralEquality;StructuralComparison>]
   type T = {
@@ -18,36 +19,42 @@ module Slide =
     command: string option
   }
   let from (id:string) : T = { commit=id; command=None }
-  type Error = Unknown | ModifiedFiles | Serialization of exn | Warn of string
+  type Error = Unknown | GitError | ModifiedFiles | Serialization of exn | Warn of string
+  type Presentation = T array
   type IImpl =
     abstract member SetSlide: T -> Result<unit, Error>
-    abstract member GetCurrent: Unit -> Result<T, Error>
+    abstract member GetCurrent: Presentation -> Result<T*int, Error>
 
   type GitImpl() =
-    let runf = ignore << Process.runProcess ignore ignore "git"
+    let run = ignore << Process.runProcess ignore ignore "git"
+    
+    let runf args =
+        let mutable r = []
+        let p = Process.runProcess (fun x -> r <- x :: r) (printfn "ERROR: %s") "git" args
+        Seq.toArray r
     interface IImpl with
         override x.SetSlide(s:T) =
-          runf ["checkout"; "-q"; s.commit]
+          run ["checkout"; "-q"; s.commit]
           match s.command with
           | _ -> ()
           ok ()
-        override x.GetCurrent() = fail Unknown
+        override x.GetCurrent(p:Presentation) =
+            trial {
+                let! curId = runf ["rev-parse"; "HEAD"] |> Array.tryItem 0 |> failIfNone GitError
+                let! i = p |> Array.tryFindIndex (fun s -> s.commit = curId) |> failIfNone Unknown
+                return (p.[i],i)
+            }
         
 
-  type Presentation = T array
 
   let load (path:string): Result<Presentation, Error> =
-    use f:System.IO.TextReader = upcast(System.IO.File.OpenText(path))
+    let json = System.IO.File.ReadAllText(path)
     
-    let d = Deserializer()
-    Chessie.ErrorHandling.Trial.Catch (fun (x:System.IO.TextReader) -> d.Deserialize<Presentation>(x)) f
+    Chessie.ErrorHandling.Trial.Catch ((fun x -> JsonConvert.DeserializeObject<Presentation>(x))) json
     |> mapFailure (List.map Serialization)
 
   let save (path:string) (p:Presentation): Result<unit, Error> =
-    use f:System.IO.TextWriter = upcast(new System.IO.StreamWriter(path))
-    
-    let d = Serializer()
-    Chessie.ErrorHandling.Trial.Catch (fun (x:System.IO.TextWriter) -> d.Serialize(x, p)) f
+    Chessie.ErrorHandling.Trial.Catch (JsonConvert.SerializeObject >> (fun x -> System.IO.File.WriteAllText(path,x))) p
     |> mapFailure (List.map Serialization)
     
 
@@ -59,8 +66,7 @@ module Runner =
 
   let private findIndex (t:T) =
     trial {
-      let! cur = t.impl.GetCurrent()
-      let i = Array.findIndex((=) cur) t.presentation
+      let! (_,i) = t.impl.GetCurrent t.presentation
       return i
     }
 
