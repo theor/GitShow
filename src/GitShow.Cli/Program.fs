@@ -71,7 +71,7 @@ let main argv =
     | Some(c) -> printfn "Command mode: %A" c
     let presFile = args.GetResult(<@ Presentation @>, "pres.json")
     let res = trial {
-        let! p= load(presFile)
+        let! p= Presentation.load(presFile)
         do printfn "%A" p
         let runner = Runner.fromPresentation p
         match args.TryGetResult <@ Command @> with

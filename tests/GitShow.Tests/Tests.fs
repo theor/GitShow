@@ -43,14 +43,14 @@ let testRepo () =
     printfn "Commits: %A" commits
     let pres = commits |> Array.map Slide.from
     printfn "Pres: %A" pres
-    Slide.save "pres.json" pres |> assertSuccess
+    Presentation.save "pres.json" pres |> assertSuccess
     pres
 
 [<Test>]
 let ``setup repo`` () =
     let p = testRepo()
     let nthId n = (Array.item n p).commit
-    let r:IImpl = upcast GitImpl()
+    let r:Presentation.IImpl = upcast Git.GitImpl()
     r.SetSlide (p.[0]) |> assertSuccess
     let curCommit() = runf ["rev-parse"; "HEAD"] |> Array.item 0
     printfn "Currently at: %A" (curCommit())

@@ -1,5 +1,4 @@
 FSharp.Core
-YamlDotNet
 
 group Test
 	NUnit
